@@ -1,5 +1,5 @@
 (() => {
-  const GAS_URL = 'https://santoserisk-dotcom.github.io/Estoque_CVS/';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbwEMYafe0TEvjfMrfCZ9nwbGZ1YXlp1Bq258Aa5aDdnxF5zr9GCL-H56e6VDtikdO-_/exec';
 
   async function apiGet(path, token) {
     const url = `${GAS_URL}?action=${encodeURIComponent(path)}`;
