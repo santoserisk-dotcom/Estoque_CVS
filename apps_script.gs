@@ -1,19 +1,25 @@
 const CONFIG = {
   SHEET_CVS: 'CVS',
   SHEET_LOG: 'LOG_RETIRADAS',
-  ALLOWED_DOMAIN: 'empresa.com.br',
-  ALLOWED_EMAILS: ['tecnico1@empresa.com.br', 'tecnico2@empresa.com.br'],
+  ALLOWED_DOMAIN: 'totallinks.com.br',
+  ALLOWED_EMAILS: ['ericksantos@totallinks.com.br', 'santos.erisk@gmail.com'],
   STOCK_COL: 4,
   FIRST_ROW: 2,
   SHEET_COLUMNS: 16,
 };
 
+const ALLOWED_ORIGINS = ['https://santoserisk-dotcom.github.io'];
+
 function doGet(e) {
-  return jsonOutput(routeGet_(e));
+  return jsonOutput(routeGet_(e), e);
 }
 
 function doPost(e) {
-  return jsonOutput(routePost_(parseBody_(e.postData?.contents)));
+  return jsonOutput(routePost_(parseBody_(e.postData?.contents)), e);
+}
+
+function doOptions(e) {
+  return corsOptionsResponse_(e);
 }
 
 function routeGet_(e) {
@@ -190,6 +196,32 @@ function normalizeError_(err) {
   return error_('INTERNAL', err && err.message ? err.message : 'Erro interno', 500);
 }
 
-function jsonOutput(payload) {
-  return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(ContentService.MimeType.JSON);
+function jsonOutput(payload, e) {
+  const output = ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(ContentService.MimeType.JSON);
+  const origin = getAllowedOrigin_(e?.parameter?.origin);
+  if (origin) {
+    output.setHeader('Access-Control-Allow-Origin', origin);
+    output.setHeader('Access-Control-Allow-Credentials', 'true');
+    output.setHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type,Accept');
+    output.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  }
+  return output;
+}
+
+function corsOptionsResponse_(e) {
+  const origin = getAllowedOrigin_(e?.parameter?.origin);
+  const output = ContentService.createTextOutput('').setMimeType(ContentService.MimeType.JSON);
+  if (origin) {
+    output.setHeader('Access-Control-Allow-Origin', origin);
+    output.setHeader('Access-Control-Allow-Credentials', 'true');
+    output.setHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type,Accept');
+    output.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    output.setHeader('Access-Control-Max-Age', '3600');
+  }
+  return output;
+}
+
+function getAllowedOrigin_(origin) {
+  const value = String(origin || '').trim();
+  return ALLOWED_ORIGINS.indexOf(value) >= 0 ? value : null;
 }

@@ -1,5 +1,5 @@
 (() => {
-  const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwt49ltnvH6DuLAj4mZSZQF5QgP9rTJ7ZR7ofm4CGyYZexphoxbI9ijvU8X9j3oxmEw/exec';
+  const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbxvdQrPX7RRnxLiyRqPrAWwNA1iO561HrgsFU3_7I5byk3Y6IHotzP8N7kIAzrBoGDP/exec';
   const GAS_PLACEHOLDER = 'COLE_AQUI_URL_WEBAPP';
 
   function getGasUrl() {
@@ -39,10 +39,11 @@
     }
 
     const url = new URL(getGasUrl());
+    url.searchParams.set('origin', window.location.origin);
     const init = {
       method,
       mode: 'cors',
-      credentials: 'omit',
+      credentials: 'include',
       headers: {
         Accept: 'application/json',
       },
