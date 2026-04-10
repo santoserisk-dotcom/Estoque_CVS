@@ -46,6 +46,11 @@
 
     try {
       await Sync.fullLoad(user.token);
+      const items = await DB.getAllItems();
+      UI.setFeedback('ok', `Sync concluída com ${items.length} itens`);
+    } catch (error) {
+      const items = await DB.getAllItems();
+      UI.setFeedback('err', `Sem sync remota (${error.message}). Cache local: ${items.length} itens`);
       UI.setFeedback('ok', 'Dados carregados com sucesso');
     } catch (_) {
       UI.setFeedback('err', 'Modo offline ativo: usando cache local');
@@ -68,6 +73,28 @@
     if (action === 'withdraw') {
       UI.setRoute('withdraw', { itemId: e.target.dataset.itemId });
       historyStack.push('withdraw');
+      return;
+    }
+
+    if (action === 'sync-now') {
+      try {
+        await Sync.fullLoad(Auth.getUser().token);
+        UI.setFeedback('ok', 'Sincronização manual concluída');
+      } catch (err) {
+        UI.setFeedback('err', `Falha no sync: ${err.message}`);
+      }
+      UI.render();
+      return;
+    }
+
+    if (action === 'config-gas') {
+      const current = Sync.getGasUrl();
+      const url = prompt('Cole a URL /exec do Web App do Apps Script', current.includes('COLE_AQUI') ? '' : current);
+      if (url) {
+        Sync.setGasUrl(url);
+        UI.setFeedback('ok', 'URL da integração salva');
+        UI.render();
+      }
     }
   });
 
@@ -91,6 +118,7 @@
     }
 
     try {
+      await Sync.registerWithdrawal({ ...formData, quantity: Number(formData.quantity) }, Auth.getUser());
       await Sync.registerWithdrawal({
         ...formData,
         quantity: Number(formData.quantity),
@@ -133,12 +161,20 @@
     updateConnection();
     const user = Auth.getUser();
     if (!user) return;
+    try {
+      await Sync.flushQueue(user);
+      UI.setFeedback('ok', 'Conexão restabelecida e fila sincronizada');
+    } catch (error) {
+      UI.setFeedback('err', `Fila ainda pendente: ${error.message}`);
+    }
+
     await Sync.flushQueue(user);
     UI.setFeedback('ok', 'Conexão restabelecida e fila sincronizada');
     UI.render();
   });
   window.addEventListener('offline', updateConnection);
 
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.warn);
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(console.warn);
   }

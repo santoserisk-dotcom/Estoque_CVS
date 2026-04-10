@@ -1,4 +1,4 @@
-# Estoque CVS - PWA Offline-Firstt
+# Estoque CVS - PWA Offline-First
 
 Sistema mobile-first para gestão de estoque da equipe técnica de campo com GitHub Pages + Google Apps Script + Google Sheets.
 
@@ -46,6 +46,8 @@ Sistema mobile-first para gestão de estoque da equipe técnica de campo com Git
 
 1. Suba os arquivos no repositório.
 2. Ative GitHub Pages apontando para branch principal.
+3. Ao abrir o app, use **Configurar integração (URL Web App)** na Home e cole a URL `/exec` do Apps Script.
+
 3. Em `sync.js`, substitua `COLE_AQUI_URL_WEBAPP` pela URL do Apps Script publicado.
 
 ### Backend (Apps Script)
@@ -64,6 +66,20 @@ Sistema mobile-first para gestão de estoque da equipe técnica de campo com Git
 - Segurança efetiva está no Apps Script via `Session.getActiveUser().getEmail()`.
 - Frontend **não** é fonte de verdade para autorização.
 - O token no frontend é apenas suporte de UX/integração.
+
+## Como saber se sincronizou com sucesso
+
+Na tela Home, o card **Status da sincronização** mostra:
+- data/hora da última sync
+- quantidade na fila pendente
+- resultado da última tentativa
+
+Se categorias não aparecerem:
+1. Verifique se a URL do Web App foi configurada.
+2. Confirme se o usuário logado está permitido por domínio/whitelist no Apps Script.
+3. Execute o botão **Sincronizar agora**.
+4. Valide se a aba `CVS` possui linhas a partir da linha 2 e categoria preenchida.
+
 
 ## Regras de negócio atendidas
 

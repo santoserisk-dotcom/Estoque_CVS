@@ -29,14 +29,32 @@
     </div>`;
   }
 
-  function renderHome() {
+  async function renderHome() {
     const tpl = document.getElementById('tplHome');
-    return `${feedbackTpl()}${tpl.innerHTML}`;
+    const lastSync = await DB.metaGet('lastSync');
+    const status = await DB.metaGet('lastSyncStatus');
+    const queue = await DB.queueAll();
+
+    return `${feedbackTpl()}${tpl.innerHTML}
+    <section class="card stack">
+      <h3>Status da sincronização</h3>
+      <p class="meta">Última sync: ${lastSync?.value ? new Date(lastSync.value).toLocaleString() : 'nunca'}</p>
+      <p class="meta">Fila pendente: ${queue.length}</p>
+      <p class="meta">Resultado: ${status?.value?.message || 'sem execução recente'}</p>
+      <button class="btn" data-action="sync-now">Sincronizar agora</button>
+      <button class="btn" data-action="config-gas">Configurar integração (URL Web App)</button>
+    </section>`;
   }
 
   async function renderCategories() {
     const items = await DB.getAllItems();
-    const groups = [...new Set(items.map((i) => i.category))].sort();
+    const groups = [...new Set(items.map((i) => i.category))].filter(Boolean).sort();
+    if (!groups.length) {
+      return `${feedbackTpl()}<section class="card stack">
+        <h2>Sem categorias em cache</h2>
+        <p class="help">1) Configure a URL do Web App na Home. 2) Faça login com conta autorizada no Apps Script. 3) Toque em Sincronizar agora.</p>
+      </section>`;
+    }
     return `${feedbackTpl()}<section class="list">${groups
       .map((g) => `<button class="tile" data-route="items" data-category="${g}"><h2>${g}</h2></button>`)
       .join('')}</section>`;
@@ -52,9 +70,7 @@
   async function renderSearch() {
     const q = state.query.trim().toLowerCase();
     const items = await DB.getAllItems();
-    const filtered = !q
-      ? []
-      : items.filter((i) => `${i.name} ${i.code}`.toLowerCase().includes(q));
+    const filtered = !q ? [] : items.filter((i) => `${i.name} ${i.code}`.toLowerCase().includes(q));
     return `${feedbackTpl()}<section class="stack"><input id="searchInput" class="input" placeholder="Buscar por nome/código" value="${state.query}" />
       <div class="list">${filtered.map((i) => cardItem(i)).join('') || '<p class="help">Digite para pesquisar.</p>'}</div>
     </section>`;
@@ -81,6 +97,7 @@
       <form id="withdrawForm" class="form">
         <input type="hidden" name="itemId" value="${item.id}" />
         <input type="hidden" name="itemName" value="${item.name}" />
+        <input type="hidden" name="type" value="${item.type}" />
         <label>Quantidade <input class="input" name="quantity" type="number" min="1" required /></label>
         <label>Técnico <input class="input" name="technician" required value="${Auth.getUser()?.email || ''}" /></label>
         <label>Patrimônios (1 por linha, quando aplicável)
@@ -97,14 +114,14 @@
     root.classList.remove('slide-in');
     let html = '';
     switch (state.route) {
-      case 'home': html = renderHome(); break;
+      case 'home': html = await renderHome(); break;
       case 'categories': html = await renderCategories(); break;
       case 'items': html = await renderItemsByCategory(state.category); break;
       case 'search': html = await renderSearch(); break;
       case 'recent': html = await renderRecent(); break;
       case 'critical': html = await renderCritical(); break;
       case 'withdraw': html = await renderWithdraw(state.itemId); break;
-      default: html = renderHome();
+      default: html = await renderHome();
     }
     root.innerHTML = html;
     requestAnimationFrame(() => root.classList.add('slide-in'));
