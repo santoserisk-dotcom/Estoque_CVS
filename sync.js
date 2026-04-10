@@ -1,5 +1,5 @@
 (() => {
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbwEMYafe0TEvjfMrfCZ9nwbGZ1YXlp1Bq258Aa5aDdnxF5zr9GCL-H56e6VDtikdO-_/exec';
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzdu7gRs3BUIM1YD652I3DgNspyjgF4UISQetS21GGfUSd92iN31PS9gBApAcvWVWUZ/exec';
 
   async function apiGet(path, token) {
     const url = `${GAS_URL}?action=${encodeURIComponent(path)}`;
