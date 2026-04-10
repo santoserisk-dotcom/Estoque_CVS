@@ -16,49 +16,46 @@
     el.connection.style.color = online ? 'var(--ok)' : 'var(--danger)';
   }
 
-  function validateWithdrawal(data, item) {
-    if (!item) return 'Item não encontrado';
-    const qty = Number(data.quantity);
-    if (!qty || qty <= 0) return 'Quantidade deve ser maior que zero';
-    if (qty > Number(item.stock)) return 'Quantidade não pode exceder o estoque';
-    if (!data.technician?.trim()) return 'Técnico é obrigatório';
-    if (item.type === 'patrimonial') {
-      const assets = (data.assets || '').split('\n').filter(Boolean);
-      if (assets.length !== qty) return 'Quantidade de patrimônios deve bater com a retirada';
-    }
-    return null;
-  }
-
-  async function boot() {
-    UI.setRoute('home');
-    const user = Auth.getUser();
-    if (!user) {
-      document.getElementById('view').innerHTML = document.getElementById('tplLogin').innerHTML;
-      document.getElementById('btnLogin').onclick = async () => {
+  function renderLoginView(message) {
+    const loginView = document.getElementById('tplLogin').innerHTML;
+    const errorMessage = message ? `<p class="help" style="color: var(--danger);">${message}</p>` : '';
+    document.getElementById('view').innerHTML = `${loginView}${errorMessage}`;
+    const loginButton = document.getElementById('btnLogin');
+    if (loginButton) {
+      loginButton.addEventListener('click', async () => {
         try {
           await Auth.loginWithGoogle();
           await boot();
         } catch (error) {
-          UI.setFeedback('err', error.message);
+          renderLoginView(error.message || 'Falha ao autenticar.');
         }
-      };
+      });
+    }
+  }
+
+  async function boot() {
+    UI.setRoute('home');
+    updateConnection();
+
+    const user = Auth.getUser();
+    if (!user) {
+      renderLoginView();
       return;
     }
 
     try {
       await Sync.fullLoad(user.token);
       const items = await DB.getAllItems();
-      UI.setFeedback('ok', `Sync concluída com ${items.length} itens`);
+      UI.setFeedback('ok', `Sincronização concluída com ${items.length} itens`);
     } catch (error) {
       const items = await DB.getAllItems();
       if (items.length) {
-        UI.setFeedback('ok', `Sem sync remota (${error.message}). Cache local: ${items.length} itens`);
+        UI.setFeedback('ok', `Offline: usando cache local (${items.length} itens)`);
       } else {
-        UI.setFeedback('err', `Sem sync remota (${error.message}). Sem dados locais.`);
+        UI.setFeedback('err', `Não foi possível sincronizar: ${error.message}`);
       }
     }
     await UI.render();
-    updateConnection();
   }
 
   document.addEventListener('click', async (e) => {
@@ -66,7 +63,7 @@
     const action = e.target.dataset.action;
 
     if (route) {
-      const params = { category: e.target.dataset.category };
+      const params = { category: e.target.dataset.category, itemId: e.target.dataset.itemId };
       UI.setRoute(route, params);
       historyStack.push(route);
       return;
@@ -80,7 +77,7 @@
 
     if (action === 'sync-now') {
       try {
-        await Sync.fullLoad(Auth.getUser().token);
+        await Sync.fullLoad(Auth.getUser()?.token);
         UI.setFeedback('ok', 'Sincronização manual concluída');
       } catch (err) {
         UI.setFeedback('err', `Falha no sync: ${err.message}`);
@@ -97,6 +94,13 @@
         UI.setFeedback('ok', 'URL da integração salva');
         UI.render();
       }
+      return;
+    }
+
+    if (action === 'logout') {
+      Auth.clearUser();
+      renderLoginView('Sessão encerrada. Faça login novamente.');
+      return;
     }
   });
 
@@ -124,7 +128,7 @@
       UI.setFeedback('ok', 'Retirada registrada e fila atualizada');
       UI.setRoute('recent');
     } catch (err) {
-      UI.setFeedback('err', err.message);
+      UI.setFeedback('err', err.message || 'Erro ao registrar retirada');
       UI.render();
     }
   });
@@ -163,14 +167,30 @@
       await Sync.flushQueue(user);
       UI.setFeedback('ok', 'Conexão restabelecida e fila sincronizada');
     } catch (error) {
-      UI.setFeedback('err', `Fila ainda pendente: ${error.message}`);
+      UI.setFeedback('err', `Não foi possível sincronizar: ${error.message}`);
     }
     UI.render();
   });
+
   window.addEventListener('offline', updateConnection);
 
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.warn);
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(console.warn);
+  }
 
   document.documentElement.dataset.theme = localStorage.getItem('theme') || 'dark';
   boot();
+
+  function validateWithdrawal(data, item) {
+    if (!item) return 'Item não encontrado';
+    const qty = Number(data.quantity);
+    if (!qty || qty <= 0) return 'Quantidade deve ser maior que zero';
+    if (qty > Number(item.stock)) return 'Quantidade não pode exceder o estoque';
+    if (!data.technician?.trim()) return 'Técnico é obrigatório';
+    if (item.type === 'patrimonial') {
+      const assets = (data.assets || '').split('\n').map((value) => value.trim()).filter(Boolean);
+      if (assets.length !== qty) return 'Quantidade de patrimônios deve bater com a retirada';
+    }
+    return null;
+  }
 })();

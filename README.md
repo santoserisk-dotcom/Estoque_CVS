@@ -4,13 +4,13 @@ Sistema mobile-first para gestão de estoque da equipe técnica de campo com Git
 
 ## 1) Arquitetura da solução
 
-- **Frontend PWA (GitHub Pages)**: HTML/CSS/JS puro, Service Worker para cache, IndexedDB para dados e fila offline.
+- **Frontend PWA (GitHub Pages)**: HTML/CSS/JS puro, Service Worker, IndexedDB e fila de sincronização offline.
 - **Backend serverless (Apps Script Web App)**: valida autenticação real, regras de negócio e gravações na planilha.
 - **Persistência oficial (Google Sheets)**:
   - Aba `CVS` preservada com colunas A:P.
   - Coluna D atualizada no ato da retirada.
-  - Colunas F:P não são editadas pelo sistema.
-  - Aba `LOG_RETIRADAS` para trilha completa.
+  - Colunas F:P mantidas intactas.
+  - Aba `LOG_RETIRADAS` para trilha completa e rastreabilidade.
 
 ## 2) Estrutura de pastas
 
@@ -29,69 +29,76 @@ Sistema mobile-first para gestão de estoque da equipe técnica de campo com Git
 └─ README.md
 ```
 
-## 3) Fluxo técnico (frontend + Apps Script)
+## 3) Fluxo técnico frontend + Apps Script
 
-1. Usuário entra com Google (frontend para UX).
-2. App faz carga completa da planilha e salva em IndexedDB.
-3. Técnico realiza retirada em poucos toques.
-4. Saldo é reduzido **imediatamente local** e inserido na fila.
-5. Se online, envio instantâneo ao Apps Script.
-6. Apps Script valida usuário, estoque e regras.
-7. Apps Script grava retirada na `LOG_RETIRADAS` e atualiza coluna D.
-8. Se offline, fila fica pendente e sincroniza no retorno da conexão.
+1. O técnico abre o app e acessa a área de login.
+2. O app chama o Web App e carrega itens da planilha para IndexedDB.
+3. O técnico navega por categorias, busca ou itens recentes.
+4. Ao registrar retirada, o saldo é atualizado localmente.
+5. A retirada é registrada em uma fila de sincronização.
+6. Se online, o app envia imediatamente ao Apps Script.
+7. O Apps Script valida usuário, estoque e regras de negócio.
+8. O Apps Script atualiza a coluna D e grava o registro em `LOG_RETIRADAS`.
+9. Quando a conexão retorna, a fila pendente é sincronizada automaticamente.
 
-## 4) Deploy rápido
+## 4) Deploy e configuração
 
 ### Frontend (GitHub Pages)
 
-1. Suba os arquivos no repositório.
-2. Ative GitHub Pages apontando para branch principal.
-3. Ao abrir o app, use **Configurar integração (URL Web App)** na Home e cole a URL `/exec` do Apps Script.
+1. Suba todos os arquivos para o repositório.
+2. Ative o GitHub Pages na branch principal.
+3. Abra o app no navegador.
+4. Na Home, toque em **Configurar integração (URL Web App)** e cole a URL `/exec` do Apps Script.
 
-3. Em `sync.js`, substitua `COLE_AQUI_URL_WEBAPP` pela URL do Apps Script publicado.
+### Backend (Google Apps Script)
 
-### Backend (Apps Script)
-
-1. Crie projeto Apps Script vinculado à planilha oficial.
-2. Cole `apps_script.gs`.
+1. Crie um projeto Apps Script vinculado à planilha oficial.
+2. Substitua o código pelo conteúdo de `apps_script.gs`.
 3. Ajuste:
    - `ALLOWED_DOMAIN`
    - `ALLOWED_EMAILS`
-4. Publique como Web App:
+4. Publique o projeto como Web App:
    - Executar como: **Você**
-   - Quem tem acesso: **Usuários do domínio** (ou conforme sua política)
+   - Quem tem acesso: **Usuários do domínio** ou **Qualquer pessoa** conforme sua política.
+
+### Configurar a URL do Web App
+
+- O `sync.js` usa o placeholder padrão:
+  - `https://script.google.com/macros/s/COLE_AQUI_URL_WEBAPP/exec`
+- Após publicar, cole a URL real no app.
 
 ## Segurança
 
-- Segurança efetiva está no Apps Script via `Session.getActiveUser().getEmail()`.
-- Frontend **não** é fonte de verdade para autorização.
-- O token no frontend é apenas suporte de UX/integração.
+- A segurança real está no Apps Script via `Session.getActiveUser().getEmail()`.
+- O frontend não é fonte de verdade para autorização.
+- O login local melhora a experiência de usuário e permite o modo offline.
 
-## Como saber se sincronizou com sucesso
+## Comportamento offline
 
-Na tela Home, o card **Status da sincronização** mostra:
-- data/hora da última sync
-- quantidade na fila pendente
-- resultado da última tentativa
+- A primeira sincronização carrega a planilha para IndexedDB.
+- Retiradas são aplicadas localmente imediatamente.
+- Operações offline são mantidas em fila local.
+- A fila é sincronizada automaticamente ao reconectar.
+- Itens recentes e status de sincronização ficam disponíveis offline.
 
-Se categorias não aparecerem:
-1. Verifique se a URL do Web App foi configurada.
-2. Confirme se o usuário logado está permitido por domínio/whitelist no Apps Script.
-3. Execute o botão **Sincronizar agora**.
-4. Valide se a aba `CVS` possui linhas a partir da linha 2 e categoria preenchida.
+## Regras de negócio implementadas
 
+- Itens patrimoniais exigem patrimônio por unidade.
+- Quantidade deve ser maior que zero.
+- Quantidade não pode exceder o estoque.
+- Técnico é obrigatório.
+- Observação é opcional.
+- Estoque crítico é detectado quando `stock <= minStock`.
 
-## Regras de negócio atendidas
+## Validação rápida
 
-- Validação de quantidade > 0.
-- Bloqueio de retirada maior que saldo.
-- Técnico obrigatório.
-- Patrimônio obrigatório para item patrimonial (1:1 com quantidade).
-- Observação opcional.
-- Estoque crítico com base em `stock <= minStock`.
+- Verifique se a aba `CVS` existe e inicia na linha 2.
+- Confirme se a coluna D representa o saldo atual.
+- Não altere fórmulas de F até P.
+- A aba `LOG_RETIRADAS` será criada automaticamente se não existir.
 
-## Próximos passos recomendados
+## Observações
 
-- Integrar Google Identity Services real no `auth.js`.
-- Adicionar telemetria e auditoria por tentativa inválida.
-- Implementar paginação/filtros avançados para bases maiores.
+- Para uma autenticação Google completa, pode-se integrar o Google Identity Services.
+- O Apps Script deve estar publicado para permitir retorno de `Session.getActiveUser().getEmail()`.
+- O frontend está pronto para deploy no GitHub Pages.

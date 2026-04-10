@@ -1,5 +1,6 @@
 (() => {
-  const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbzdu7gRs3BUIM1YD652I3DgNspyjgF4UISQetS21GGfUSd92iN31PS9gBApAcvWVWUZ/exec';
+  const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwt49ltnvH6DuLAj4mZSZQF5QgP9rTJ7ZR7ofm4CGyYZexphoxbI9ijvU8X9j3oxmEw/exec';
+  const GAS_PLACEHOLDER = 'COLE_AQUI_URL_WEBAPP';
 
   function getGasUrl() {
     return localStorage.getItem('gas_url') || DEFAULT_GAS_URL;
@@ -10,42 +11,89 @@
   }
 
   function hasConfiguredGasUrl() {
-    return getGasUrl() && !getGasUrl().includes('https://script.google.com/macros/s/AKfycbzdu7gRs3BUIM1YD652I3DgNspyjgF4UISQetS21GGfUSd92iN31PS9gBApAcvWVWUZ/exec');
+    const url = getGasUrl();
+    return url && !url.includes(GAS_PLACEHOLDER);
   }
 
-  async function apiGet(path, token) {
+  async function apiFetch(path, token, method = 'GET', payload = null) {
     if (!hasConfiguredGasUrl()) {
       throw new Error('URL do Web App não configurada. Defina em Configurar integração na Home.');
     }
-    const url = `${getGasUrl()}?action=${encodeURIComponent(path)}`;
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    if (!res.ok) throw new Error(`Falha Apps Script GET (${res.status})`);
-    return res.json();
-  }
 
-  async function apiPost(path, token, payload) {
-    if (!hasConfiguredGasUrl()) {
-      throw new Error('URL do Web App não configurada. Defina em Configurar integração na Home.');
-    }
-    const res = await fetch(getGasUrl(), {
-      method: 'POST',
+    const url = new URL(getGasUrl());
+    const init = {
+      method,
+      mode: 'cors',
+      credentials: 'include',
       headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
       },
-      body: JSON.stringify({ action: path, payload }),
-    });
-    if (!res.ok) throw new Error(`Falha Apps Script POST (${res.status})`);
-    return res.json();
+    };
+
+    if (token) {
+      init.headers.Authorization = `Bearer ${token}`;
+    }
+
+    if (method === 'GET') {
+      url.searchParams.set('action', path);
+    } else {
+      init.headers['Content-Type'] = 'application/json';
+      init.body = JSON.stringify({ action: path, payload });
+    }
+
+    const response = await fetch(url.toString(), init);
+    const text = await response.text();
+    let json;
+    try {
+      json = text ? JSON.parse(text) : {};
+    } catch (err) {
+      throw new Error(`Resposta inválida do Web App (${response.status})`);
+    }
+
+    if (!response.ok) {
+      throw new Error(json?.error?.message || `Falha Apps Script (${response.status})`);
+    }
+
+    return json;
+  }
+
+  function apiGet(path, token) {
+    return apiFetch(path, token, 'GET');
+  }
+
+  function apiPost(path, token, payload) {
+    return apiFetch(path, token, 'POST', payload);
+  }
+
+  async function whoAmI(token) {
+    return apiGet('whoami', token);
+  }
+
+  function normalizeItem(item) {
+    return {
+      id: String(item.id ?? item[0] ?? '').trim(),
+      code: String(item.code ?? item[1] ?? '').trim(),
+      name: String(item.name ?? item[2] ?? '').trim(),
+      stock: Number(item.stock ?? item[3] ?? 0),
+      category: String(item.category ?? item[4] ?? 'Sem categoria').trim(),
+      minStock: Number(item.minStock ?? item[5] ?? 0),
+      type: String(item.type ?? item[6] ?? 'consumivel').toLowerCase(),
+      rowIndex: item.rowIndex ?? null,
+    };
   }
 
   async function fullLoad(token) {
     const data = await apiGet('listItems', token);
     if (!data.ok) throw new Error(data.error?.message || 'Erro ao carregar dados');
-    const items = data.data.items || [];
+
+    const items = Array.isArray(data.data?.items) ? data.data.items.map(normalizeItem) : [];
     await DB.setItems(items);
-    await DB.metaSet('lastSync', data.meta.serverTime || new Date().toISOString());
-    await DB.metaSet('lastSyncStatus', { ok: true, message: 'Sincronização concluída', at: new Date().toISOString() });
+    await DB.metaSet('lastSync', data.meta?.serverTime || new Date().toISOString());
+    await DB.metaSet('lastSyncStatus', {
+      ok: true,
+      message: 'Sincronização concluída',
+      at: new Date().toISOString(),
+    });
     return data;
   }
 
@@ -54,7 +102,11 @@
     const item = allItems.find((i) => i.id === withdrawal.itemId);
     if (!item) throw new Error('Item não encontrado em cache');
 
-    item.stock = Number(item.stock) - Number(withdrawal.quantity);
+    const quantity = Number(withdrawal.quantity);
+    if (!quantity || quantity <= 0) throw new Error('Quantidade deve ser maior que zero');
+    if (quantity > Number(item.stock)) throw new Error('Quantidade não pode exceder o estoque');
+
+    item.stock = Number(item.stock) - quantity;
     await DB.putItem(item);
 
     const localEntry = {
@@ -70,6 +122,7 @@
     if (navigator.onLine) {
       await flushQueue(user);
     }
+
     return localEntry;
   }
 
@@ -79,16 +132,35 @@
       try {
         const response = await apiPost('withdraw', user.token, job);
         if (!response.ok) throw new Error(response.error?.message || 'Erro ao sincronizar');
+
         await DB.queueDelete(job.id);
-        const updatedItem = response.data.item;
-        if (updatedItem) await DB.putItem(updatedItem);
+        if (response.data?.item) {
+          await DB.putItem(normalizeItem(response.data.item));
+        }
       } catch (error) {
-        await DB.metaSet('lastSyncStatus', { ok: false, message: error.message, at: new Date().toISOString() });
+        await DB.metaSet('lastSyncStatus', {
+          ok: false,
+          message: error.message,
+          at: new Date().toISOString(),
+        });
         throw error;
       }
     }
-    await DB.metaSet('lastSyncStatus', { ok: true, message: 'Fila sincronizada', at: new Date().toISOString() });
+
+    await DB.metaSet('lastSyncStatus', {
+      ok: true,
+      message: 'Fila sincronizada',
+      at: new Date().toISOString(),
+    });
   }
 
-  window.Sync = { fullLoad, registerWithdrawal, flushQueue, getGasUrl, setGasUrl, hasConfiguredGasUrl };
+  window.Sync = {
+    getGasUrl,
+    setGasUrl,
+    hasConfiguredGasUrl,
+    whoAmI,
+    fullLoad,
+    registerWithdrawal,
+    flushQueue,
+  };
 })();

@@ -1,5 +1,5 @@
 (() => {
-  const AUTH_KEY = 'auth_user';
+  const AUTH_KEY = 'estoque_cvs_auth';
 
   function getUser() {
     const raw = localStorage.getItem(AUTH_KEY);
@@ -16,12 +16,20 @@
   }
 
   async function loginWithGoogle() {
-    // Placeholder de UX para GitHub Pages estático.
-    // Produção: integrar Google Identity Services e enviar idToken no sync.
-    const email = prompt('Informe seu e-mail corporativo Google:');
-    if (!email) throw new Error('Login cancelado');
-    const token = btoa(`${email}:${Date.now()}`);
-    return setUser({ email: email.trim().toLowerCase(), token, loggedAt: new Date().toISOString() });
+    if (!Sync.hasConfiguredGasUrl()) {
+      throw new Error('Configure primeiro a URL do Apps Script na Home.');
+    }
+
+    const result = await Sync.whoAmI();
+    if (!result.ok) {
+      throw new Error(result.error?.message || 'Não foi possível autenticar com o Web App.');
+    }
+
+    return setUser({
+      email: result.data.email,
+      token: btoa(`${result.data.email}:${Date.now()}`),
+      loggedAt: new Date().toISOString(),
+    });
   }
 
   window.Auth = { getUser, setUser, clearUser, loginWithGoogle };

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0b1220" />
-    <meta name="description" content="Gestão de estoque de campo offline-first" />
+    <meta name="description" content="Gestão de estoque offline-first para equipe técnica de campo." />
     <link rel="manifest" href="manifest.json" />
     <link rel="stylesheet" href="style.css" />
     <title>Estoque CVS</title>
@@ -35,17 +35,10 @@
       </nav>
     </div>
 
-    <template id="tplLoading">
-      <section class="card center">
-        <div class="spinner"></div>
-        <p>Carregando dados...</p>
-      </section>
-    </template>
-
     <template id="tplLogin">
-      <section class="card stack">
+      <section class="card stack center">
         <h2>Entrar com Google</h2>
-        <p>Faça login para rastrear suas retiradas com segurança.</p>
+        <p>Seu e-mail corporativo é usado no Apps Script para validar a autorização.</p>
         <button id="btnLogin" class="btn primary">Entrar com Google</button>
       </section>
     </template>
@@ -54,15 +47,15 @@
       <section class="grid">
         <button class="tile" data-route="categories">
           <h2>Categorias</h2>
-          <p>Fluxo principal de retirada</p>
+          <p>Fluxo rápido de retirada</p>
         </button>
         <button class="tile" data-route="search">
           <h2>Busca global</h2>
-          <p>Ache item por código/nome</p>
+          <p>Ache item por código ou nome</p>
         </button>
         <button class="tile" data-route="recent">
-          <h2>Itens recentes</h2>
-          <p>Atalhos das últimas operações</p>
+          <h2>Operações recentes</h2>
+          <p>Histórico local e offline</p>
         </button>
         <button class="tile" data-route="critical">
           <h2>Estoque crítico</h2>
