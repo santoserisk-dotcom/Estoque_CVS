@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b1220" />
+    <meta name="description" content="Gestão de estoque de campo offline-first" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="style.css" />
+    <title>Estoque CVS</title>
+  </head>
+  <body>
+    <div id="app" class="app shell">
+      <header class="topbar">
+        <div class="topbar__left">
+          <button id="btnBack" class="btn icon" aria-label="Voltar">←</button>
+          <div>
+            <p id="breadcrumb" class="breadcrumb">Home</p>
+            <h1 class="title">Estoque CVS</h1>
+          </div>
+        </div>
+        <div class="topbar__right">
+          <span id="connectionBadge" class="badge">Offline</span>
+          <button id="btnTheme" class="btn icon" aria-label="Alternar tema">◐</button>
+        </div>
+      </header>
+
+      <main id="view" class="view" aria-live="polite"></main>
+
+      <nav class="bottom-nav" aria-label="Navegação principal">
+        <button data-route="home" class="tab active">Home</button>
+        <button data-route="search" class="tab">Busca</button>
+        <button data-route="recent" class="tab">Recentes</button>
+        <button data-route="critical" class="tab">Crítico</button>
+      </nav>
+    </div>
+
+    <template id="tplLoading">
+      <section class="card center">
+        <div class="spinner"></div>
+        <p>Carregando dados...</p>
+      </section>
+    </template>
+
+    <template id="tplLogin">
+      <section class="card stack">
+        <h2>Entrar com Google</h2>
+        <p>Faça login para rastrear suas retiradas com segurança.</p>
+        <button id="btnLogin" class="btn primary">Entrar com Google</button>
+      </section>
+    </template>
+
+    <template id="tplHome">
+      <section class="grid">
+        <button class="tile" data-route="categories">
+          <h2>Categorias</h2>
+          <p>Fluxo principal de retirada</p>
+        </button>
+        <button class="tile" data-route="search">
+          <h2>Busca global</h2>
+          <p>Ache item por código/nome</p>
+        </button>
+        <button class="tile" data-route="recent">
+          <h2>Itens recentes</h2>
+          <p>Atalhos das últimas operações</p>
+        </button>
+        <button class="tile" data-route="critical">
+          <h2>Estoque crítico</h2>
+          <p>Itens abaixo do mínimo</p>
+        </button>
+      </section>
+    </template>
+
+    <script src="db.js"></script>
+    <script src="auth.js"></script>
+    <script src="sync.js"></script>
+    <script src="ui.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
