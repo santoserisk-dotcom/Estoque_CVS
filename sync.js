@@ -1,5 +1,5 @@
 (() => {
-  const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbxvdQrPX7RRnxLiyRqPrAWwNA1iO561HrgsFU3_7I5byk3Y6IHotzP8N7kIAzrBoGDP/exec';
+  const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwrkijy3syiTcze9liYD14c68CFPMhORMf3LtMes58_YQDvynfz0ZITA4yb-qTUlh88/exec';
   const GAS_PLACEHOLDER = 'COLE_AQUI_URL_WEBAPP';
 
   function getGasUrl() {

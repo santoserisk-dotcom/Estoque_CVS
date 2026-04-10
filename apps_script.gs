@@ -197,28 +197,11 @@ function normalizeError_(err) {
 }
 
 function jsonOutput(payload, e) {
-  const output = ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(ContentService.MimeType.JSON);
-  const origin = getAllowedOrigin_(e?.parameter?.origin);
-  if (origin) {
-    output.setHeader('Access-Control-Allow-Origin', origin);
-    output.setHeader('Access-Control-Allow-Credentials', 'true');
-    output.setHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type,Accept');
-    output.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-  }
-  return output;
+  return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(ContentService.MimeType.JSON);
 }
 
 function corsOptionsResponse_(e) {
-  const origin = getAllowedOrigin_(e?.parameter?.origin);
-  const output = ContentService.createTextOutput('').setMimeType(ContentService.MimeType.JSON);
-  if (origin) {
-    output.setHeader('Access-Control-Allow-Origin', origin);
-    output.setHeader('Access-Control-Allow-Credentials', 'true');
-    output.setHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type,Accept');
-    output.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-    output.setHeader('Access-Control-Max-Age', '3600');
-  }
-  return output;
+  return ContentService.createTextOutput('').setMimeType(ContentService.MimeType.JSON);
 }
 
 function getAllowedOrigin_(origin) {
