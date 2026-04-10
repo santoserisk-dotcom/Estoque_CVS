@@ -1,5 +1,5 @@
 (() => {
-  const GAS_URL = 'COLE_AQUI_URL_WEBAPP';
+  const GAS_URL = 'https://santoserisk-dotcom.github.io/Estoque_CVS/';
 
   async function apiGet(path, token) {
     const url = `${GAS_URL}?action=${encodeURIComponent(path)}`;
