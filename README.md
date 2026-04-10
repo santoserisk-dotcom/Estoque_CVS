@@ -48,6 +48,8 @@ Sistema mobile-first para gestão de estoque da equipe técnica de campo com Git
 2. Ative GitHub Pages apontando para branch principal.
 3. Ao abrir o app, use **Configurar integração (URL Web App)** na Home e cole a URL `/exec` do Apps Script.
 
+3. Em `sync.js`, substitua `COLE_AQUI_URL_WEBAPP` pela URL do Apps Script publicado.
+
 ### Backend (Apps Script)
 
 1. Crie projeto Apps Script vinculado à planilha oficial.
@@ -77,6 +79,7 @@ Se categorias não aparecerem:
 2. Confirme se o usuário logado está permitido por domínio/whitelist no Apps Script.
 3. Execute o botão **Sincronizar agora**.
 4. Valide se a aba `CVS` possui linhas a partir da linha 2 e categoria preenchida.
+
 
 ## Regras de negócio atendidas
 

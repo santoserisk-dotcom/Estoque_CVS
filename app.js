@@ -51,6 +51,9 @@
     } catch (error) {
       const items = await DB.getAllItems();
       UI.setFeedback('err', `Sem sync remota (${error.message}). Cache local: ${items.length} itens`);
+      UI.setFeedback('ok', 'Dados carregados com sucesso');
+    } catch (_) {
+      UI.setFeedback('err', 'Modo offline ativo: usando cache local');
     }
     await UI.render();
     updateConnection();
@@ -116,6 +119,10 @@
 
     try {
       await Sync.registerWithdrawal({ ...formData, quantity: Number(formData.quantity) }, Auth.getUser());
+      await Sync.registerWithdrawal({
+        ...formData,
+        quantity: Number(formData.quantity),
+      }, Auth.getUser());
       UI.setFeedback('ok', 'Retirada registrada e fila atualizada');
       UI.setRoute('recent');
     } catch (err) {
@@ -160,11 +167,17 @@
     } catch (error) {
       UI.setFeedback('err', `Fila ainda pendente: ${error.message}`);
     }
+
+    await Sync.flushQueue(user);
+    UI.setFeedback('ok', 'Conexão restabelecida e fila sincronizada');
     UI.render();
   });
   window.addEventListener('offline', updateConnection);
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.warn);
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(console.warn);
+  }
 
   document.documentElement.dataset.theme = localStorage.getItem('theme') || 'dark';
   boot();

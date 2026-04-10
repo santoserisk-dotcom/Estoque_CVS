@@ -1,5 +1,5 @@
 (() => {
-  const DEFAULT_GAS_URL = 'COLE_AQUI_URL_WEBAPP';
+  const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbzdu7gRs3BUIM1YD652I3DgNspyjgF4UISQetS21GGfUSd92iN31PS9gBApAcvWVWUZ/exec';
 
   function getGasUrl() {
     return localStorage.getItem('gas_url') || DEFAULT_GAS_URL;
@@ -20,6 +20,13 @@
     const url = `${getGasUrl()}?action=${encodeURIComponent(path)}`;
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) throw new Error(`Falha Apps Script GET (${res.status})`);
+    
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzdu7gRs3BUIM1YD652I3DgNspyjgF4UISQetS21GGfUSd92iN31PS9gBApAcvWVWUZ/exec';
+
+  async function apiGet(path, token) {
+    const url = `${GAS_URL}?action=${encodeURIComponent(path)}`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error('Falha de conexão com Apps Script');
     return res.json();
   }
 
@@ -28,6 +35,7 @@
       throw new Error('URL do Web App não configurada. Defina em Configurar integração na Home.');
     }
     const res = await fetch(getGasUrl(), {
+    const res = await fetch(GAS_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -36,7 +44,7 @@
       body: JSON.stringify({ action: path, payload }),
     });
     if (!res.ok) throw new Error(`Falha Apps Script POST (${res.status})`);
-    return res.json();
+      return res.json();
   }
 
   async function fullLoad(token) {
@@ -45,6 +53,8 @@
     await DB.setItems(data.data.items || []);
     await DB.metaSet('lastSync', data.meta.serverTime || new Date().toISOString());
     await DB.metaSet('lastSyncStatus', { ok: true, message: 'Sincronização concluída', at: new Date().toISOString() });
+    await DB.setItems(data.data.items);
+    await DB.metaSet('lastSync', data.meta.serverTime);
     return data;
   }
 
@@ -67,6 +77,9 @@
     await DB.recentPut(localEntry);
 
     if (navigator.onLine) await flushQueue(user);
+    if (navigator.onLine) {
+      await flushQueue(user);
+    }
     return localEntry;
   }
 
