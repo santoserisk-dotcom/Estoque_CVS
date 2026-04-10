@@ -10,7 +10,7 @@
   }
 
   function hasConfiguredGasUrl() {
-    return getGasUrl() && !getGasUrl().includes('COLE_AQUI_URL_WEBAPP');
+    return getGasUrl() && !getGasUrl().includes('https://script.google.com/macros/s/AKfycbzdu7gRs3BUIM1YD652I3DgNspyjgF4UISQetS21GGfUSd92iN31PS9gBApAcvWVWUZ/exec');
   }
 
   async function apiGet(path, token) {
