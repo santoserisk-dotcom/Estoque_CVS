@@ -90,8 +90,12 @@
       const current = Sync.getGasUrl();
       const url = prompt('Cole a URL /exec do Web App do Apps Script', current.includes('COLE_AQUI') ? '' : current);
       if (url) {
-        Sync.setGasUrl(url);
-        UI.setFeedback('ok', 'URL da integração salva');
+        const saved = Sync.setGasUrl(url);
+        if (saved) {
+          UI.setFeedback('ok', 'URL da integração salva');
+        } else {
+          UI.setFeedback('err', 'URL inválida. Use a URL /exec do Web App do GAS.');
+        }
         UI.render();
       }
       return;

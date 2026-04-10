@@ -6,13 +6,31 @@
     return localStorage.getItem('gas_url') || DEFAULT_GAS_URL;
   }
 
+  function isValidGasUrl(url) {
+    const value = String(url || '').trim();
+    if (!value) return false;
+    if (value.includes(GAS_PLACEHOLDER)) return false;
+    if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(value)) return false;
+    try {
+      new URL(value);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function setGasUrl(url) {
-    localStorage.setItem('gas_url', String(url || '').trim());
+    const normalized = String(url || '').trim();
+    if (!isValidGasUrl(normalized)) {
+      localStorage.removeItem('gas_url');
+      return false;
+    }
+    localStorage.setItem('gas_url', normalized);
+    return true;
   }
 
   function hasConfiguredGasUrl() {
-    const url = getGasUrl();
-    return url && !url.includes(GAS_PLACEHOLDER);
+    return isValidGasUrl(getGasUrl());
   }
 
   async function apiFetch(path, token, method = 'GET', payload = null) {
@@ -24,7 +42,7 @@
     const init = {
       method,
       mode: 'cors',
-      credentials: 'include',
+      credentials: 'omit',
       headers: {
         Accept: 'application/json',
       },
