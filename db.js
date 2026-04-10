@@ -38,8 +38,9 @@
     return new Promise((resolve, reject) => {
       const t = db.transaction(storeName, mode);
       const s = t.objectStore(storeName);
-      const result = run(s);
-      t.oncomplete = () => resolve(result);
+      const request = run(s);
+      t.oncomplete = () => resolve(request?.result);
+      t.onabort = () => reject(t.error || new Error('Transaction aborted'));
       t.onerror = () => reject(t.error);
     });
   }

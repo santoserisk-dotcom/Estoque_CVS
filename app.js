@@ -17,6 +17,7 @@
   }
 
   function validateWithdrawal(data, item) {
+    if (!item) return 'Item não encontrado';
     const qty = Number(data.quantity);
     if (!qty || qty <= 0) return 'Quantidade deve ser maior que zero';
     if (qty > Number(item.stock)) return 'Quantidade não pode exceder o estoque';
@@ -50,10 +51,11 @@
       UI.setFeedback('ok', `Sync concluída com ${items.length} itens`);
     } catch (error) {
       const items = await DB.getAllItems();
-      UI.setFeedback('err', `Sem sync remota (${error.message}). Cache local: ${items.length} itens`);
-      UI.setFeedback('ok', 'Dados carregados com sucesso');
-    } catch (_) {
-      UI.setFeedback('err', 'Modo offline ativo: usando cache local');
+      if (items.length) {
+        UI.setFeedback('ok', `Sem sync remota (${error.message}). Cache local: ${items.length} itens`);
+      } else {
+        UI.setFeedback('err', `Sem sync remota (${error.message}). Sem dados locais.`);
+      }
     }
     await UI.render();
     updateConnection();
@@ -119,10 +121,6 @@
 
     try {
       await Sync.registerWithdrawal({ ...formData, quantity: Number(formData.quantity) }, Auth.getUser());
-      await Sync.registerWithdrawal({
-        ...formData,
-        quantity: Number(formData.quantity),
-      }, Auth.getUser());
       UI.setFeedback('ok', 'Retirada registrada e fila atualizada');
       UI.setRoute('recent');
     } catch (err) {
@@ -167,17 +165,11 @@
     } catch (error) {
       UI.setFeedback('err', `Fila ainda pendente: ${error.message}`);
     }
-
-    await Sync.flushQueue(user);
-    UI.setFeedback('ok', 'Conexão restabelecida e fila sincronizada');
     UI.render();
   });
   window.addEventListener('offline', updateConnection);
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(console.warn);
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(console.warn);
-  }
 
   document.documentElement.dataset.theme = localStorage.getItem('theme') || 'dark';
   boot();
