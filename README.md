@@ -1,6 +1,4 @@
-testeeeeeeeeeeeeeeeee
-
-# Estoque CVS - PWA Offline-First
+# Estoque CVS - PWA Offline-Firstt
 
 Sistema mobile-first para gestão de estoque da equipe técnica de campo com GitHub Pages + Google Apps Script + Google Sheets.
 
