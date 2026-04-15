@@ -106,6 +106,10 @@ function displayWithdrawError(message) {
   elements.withdrawError.textContent = message || '';
 }
 
+function sanitizePin(value) {
+  return String(value || '').replace(/\D/g, '').slice(0, 4);
+}
+
 function updateTechnicalHeader() {
   if (state.tecnico && state.tecnico.nome) {
     elements.tecnicoNomeHeader.textContent = `Bem-vindo, ${state.tecnico.nome}`;
@@ -138,10 +142,16 @@ async function handleLogin() {
   displayLoginError('');
 
   const senha = elements.senhaEquipe.value.trim();
-  const pin = elements.pinTecnico.value.trim();
+  const pin = sanitizePin(elements.pinTecnico.value);
+  elements.pinTecnico.value = pin;
 
   if (!senha || !pin) {
     displayLoginError('Preencha senha e PIN antes de continuar.');
+    return;
+  }
+
+  if (pin.length !== 4) {
+    displayLoginError('PIN inválido. Informe exatamente 4 dígitos.');
     return;
   }
 
@@ -502,6 +512,21 @@ function setupEventListeners() {
     elements.btnLogin.addEventListener('click', handleLogin);
   } else {
     console.warn('Login button not found');
+  }
+
+  if (elements.pinTecnico) {
+    elements.pinTecnico.addEventListener('input', () => {
+      elements.pinTecnico.value = sanitizePin(elements.pinTecnico.value);
+    });
+    elements.pinTecnico.addEventListener('keydown', event => {
+      if (event.key === 'Enter') void handleLogin();
+    });
+  }
+
+  if (elements.senhaEquipe) {
+    elements.senhaEquipe.addEventListener('keydown', event => {
+      if (event.key === 'Enter') void handleLogin();
+    });
   }
 
   if (elements.togglePassword) {
