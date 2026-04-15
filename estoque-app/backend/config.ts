@@ -16,5 +16,5 @@ export const config = {
   session: {
     secret: process.env.SESSION_SECRET || 'fallback-secret-change-me',
   },
-  port: process.env.PORT || 3000,
+  port: 3000,
 };

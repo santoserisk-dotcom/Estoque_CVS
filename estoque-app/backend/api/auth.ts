@@ -7,14 +7,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  const { senha, pin } = req.body || {};
+  const senha = String(req.body?.senha || '').trim();
+  const pin = String(req.body?.pin || '').trim();
 
   if (!senha || !pin) {
     res.status(400).json({ success: false, error: 'Senha e PIN são obrigatórios.' });
     return;
   }
 
-  const result = await loginWithPin(String(senha), String(pin));
+  if (!/^\d{4}$/.test(pin)) {
+    res.status(400).json({ success: false, error: 'PIN inválido. Informe exatamente 4 dígitos.' });
+    return;
+  }
+
+  const result = await loginWithPin(senha, pin);
   if (!result.success) {
     res.status(401).json(result);
     return;

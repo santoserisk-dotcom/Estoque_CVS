@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { getTechnicians } from './sheets.service.js';
-import type { Technician, AuthPayload } from '../types/index.js';
+import type { AuthPayload } from '../types/index.js';
 
 const SESSION_SECRET = process.env.SESSION_SECRET || 'default-session-secret';
 const SESSION_DURATION = '8h';
@@ -20,12 +20,15 @@ export function getBearerToken(authHeader?: string) {
 }
 
 export async function loginWithPin(senha: string, pin: string): Promise<AuthResult> {
-  if (senha !== TEAM_PASSWORD) {
+  const normalizedPassword = String(senha || '').trim();
+  const normalizedPin = String(pin || '').trim();
+
+  if (normalizedPassword !== TEAM_PASSWORD) {
     return { success: false, error: 'Senha da equipe inválida.' };
   }
 
   const technicians = await getTechnicians();
-  const technician = technicians.find(tech => tech.pin === pin && tech.ativo);
+  const technician = technicians.find(tech => tech.pin === normalizedPin && tech.ativo);
 
   if (!technician) {
     return { success: false, error: 'PIN inválido ou técnico inativo.' };

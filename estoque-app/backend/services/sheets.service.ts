@@ -5,23 +5,22 @@ import type { InventoryItem, Technician, LogEntry, RetiradaPayload } from '../ty
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const CLIENT_EMAIL = process.env.GOOGLE_SHEETS_CLIENT_EMAIL;
 const PRIVATE_KEY = process.env.GOOGLE_SHEETS_PRIVATE_KEY;
-
-if (!SPREADSHEET_ID || !CLIENT_EMAIL || !PRIVATE_KEY) {
-  throw new Error('Missing required Google Sheets environment variables.');
-}
-
-const PRIVATE_KEY_VALUE = PRIVATE_KEY;
+const HAS_SHEETS_CONFIG = Boolean(SPREADSHEET_ID && CLIENT_EMAIL && PRIVATE_KEY);
 
 let sheetsClient: sheets_v4.Sheets | null = null;
 
 async function getSheetsClient(): Promise<sheets_v4.Sheets> {
+  if (!HAS_SHEETS_CONFIG) {
+    throw new Error('Google Sheets não configurado. Defina GOOGLE_SHEETS_CLIENT_EMAIL, GOOGLE_SHEETS_PRIVATE_KEY e SPREADSHEET_ID.');
+  }
+
   if (sheetsClient) {
     return sheetsClient;
   }
 
   const auth = new google.auth.JWT({
     email: CLIENT_EMAIL,
-    key: PRIVATE_KEY_VALUE.replace(/\\n/g, '\n'),
+    key: PRIVATE_KEY!.replace(/\\n/g, '\n'),
     scopes: ['https://www.googleapis.com/auth/spreadsheets']
   });
 
@@ -76,6 +75,10 @@ async function ensureSheetExists(sheetName: string, headerRow: string[]) {
 }
 
 export async function getInventoryList(): Promise<InventoryItem[]> {
+  if (!HAS_SHEETS_CONFIG) {
+    return [];
+  }
+
   const sheets = await getSheetsClient();
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
@@ -96,8 +99,8 @@ export async function getInventoryList(): Promise<InventoryItem[]> {
 }
 
 export async function getTechnicians(): Promise<Technician[]> {
-  const sheets = await getSheetsClient();
   try {
+    const sheets = await getSheetsClient();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: 'TECNICOS!A2:C'
@@ -134,6 +137,10 @@ export async function getCriticalItems(): Promise<InventoryItem[]> {
 }
 
 export async function getLogEntries(): Promise<LogEntry[]> {
+  if (!HAS_SHEETS_CONFIG) {
+    return [];
+  }
+
   await ensureSheetExists('LOG_RETIRADAS', [
     'Timestamp',
     'Categoria',
@@ -171,6 +178,10 @@ export async function getLogEntries(): Promise<LogEntry[]> {
 }
 
 export async function updateInventoryQuantity(rowIndex: number, quantidade: number) {
+  if (!HAS_SHEETS_CONFIG) {
+    throw new Error('Google Sheets não configurado para atualizar estoque.');
+  }
+
   const sheets = await getSheetsClient();
   await sheets.spreadsheets.values.update({
     spreadsheetId: SPREADSHEET_ID,
@@ -181,6 +192,10 @@ export async function updateInventoryQuantity(rowIndex: number, quantidade: numb
 }
 
 export async function appendLogEntry(entry: RetiradaPayload & { categoria: string; unidade: string; estoqueAnterior: number; estoqueNovo: number; timestamp?: string; }) {
+  if (!HAS_SHEETS_CONFIG) {
+    throw new Error('Google Sheets não configurado para registrar logs.');
+  }
+
   await ensureSheetExists('LOG_RETIRADAS', [
     'Timestamp',
     'Categoria',
