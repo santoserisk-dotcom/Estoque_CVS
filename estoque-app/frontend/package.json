@@ -1,0 +1,9 @@
+{
+  "name": "estoque-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "npx http-server . -p 5173",
+    "build": "echo Frontend is static"
+  }
+}
