@@ -1,21 +1,26 @@
 {
   "name": "estoque-app",
-  "private": true,
-  "version": "0.1.0",
-  "workspaces": [
-    "frontend",
-    "backend"
-  ],
   "scripts": {
-    "build:frontend": "npm --workspace frontend run build",
-    "build:backend": "npm --workspace backend run build",
-    "build": "npm run build:frontend && npm run build:backend",
-    "dev": "npm --workspace backend run dev"
+    "dev": "npx live-server",
+    "start": "npm run build && npx live-server"
   },
-  "devDependencies": {
-    "typescript": "^5.5.0"
+  "version": "1.0.0",
+  "description": "- Frontend: HTML/CSS/JS (Vercel)\r - Backend: Google Apps Script + Google Sheets\r - Deploy: Vercel + GitHub",
+  "main": "proxy.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Erisksnt/Estoque_CSV.git"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Erisksnt/Estoque_CSV/issues"
+  },
+  "homepage": "https://github.com/Erisksnt/Estoque_CSV#readme",
   "dependencies": {
-    "googleapis": "^171.4.0"
+    "express": "^5.2.1",
+    "http-proxy-middleware": "^3.0.5"
   }
 }
